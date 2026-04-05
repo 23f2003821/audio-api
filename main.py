@@ -5,6 +5,12 @@ import numpy as np
 from scipy.io import wavfile
 import io
 
+app = FastAPI()
+
+class AudioRequest(BaseModel):
+    audio_id: str
+    audio_base64: str
+
 @app.post("/")
 def process_audio(req: AudioRequest):
     try:
@@ -21,8 +27,23 @@ def process_audio(req: AudioRequest):
         if len(data.shape) > 1:
             data = data.mean(axis=1)
 
-    except Exception as e:
-        # ALWAYS return safe JSON (NO crash)
+        return {
+            "rows": int(len(data)),
+            "columns": ["amplitude"],
+            "mean": {"amplitude": float(np.mean(data))},
+            "std": {"amplitude": float(np.std(data))},
+            "variance": {"amplitude": float(np.var(data))},
+            "min": {"amplitude": float(np.min(data))},
+            "max": {"amplitude": float(np.max(data))},
+            "median": {"amplitude": float(np.median(data))},
+            "mode": {"amplitude": float(data[0])},
+            "range": {"amplitude": float(np.max(data) - np.min(data))},
+            "allowed_values": {"amplitude": []},
+            "value_range": {"amplitude": [float(np.min(data)), float(np.max(data))]},
+            "correlation": []
+        }
+
+    except Exception:
         return {
             "rows": 0,
             "columns": [],
@@ -38,19 +59,3 @@ def process_audio(req: AudioRequest):
             "value_range": {},
             "correlation": []
         }
-
-    return {
-        "rows": int(len(data)),
-        "columns": ["amplitude"],
-        "mean": {"amplitude": float(np.mean(data))},
-        "std": {"amplitude": float(np.std(data))},
-        "variance": {"amplitude": float(np.var(data))},
-        "min": {"amplitude": float(np.min(data))},
-        "max": {"amplitude": float(np.max(data))},
-        "median": {"amplitude": float(np.median(data))},
-        "mode": {"amplitude": float(data[0])},
-        "range": {"amplitude": float(np.max(data) - np.min(data))},
-        "allowed_values": {"amplitude": []},
-        "value_range": {"amplitude": [float(np.min(data)), float(np.max(data))]},
-        "correlation": []
-    }
